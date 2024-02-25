@@ -357,33 +357,73 @@ function group(array, keySelector, valueSelector) {
  *  For more examples see unit tests.
  */
 
+const sel = {
+  element: 1,
+  id: 2,
+  class: 3,
+  attr: 4,
+  pseudoClass: 5,
+  pseudoElement: 6,
+};
+
+const onlyOne = [1, 2, 6];
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  style: [],
+  selectors: [],
+
+  createStyle(elem, selector) {
+    if (onlyOne.includes(selector) && this.selectors.includes(selector)) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    if (this.selectors.some((item) => item > selector)) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+
+    const result = { ...this };
+    result.selectors = this.selectors.concat(selector);
+    result.style = this.style.concat(elem);
+    return result;
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return this.createStyle(value, sel.element);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return this.createStyle(`#${value}`, sel.id);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return this.createStyle(`.${value}`, sel.class);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return this.createStyle(`[${value}]`, sel.attr);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return this.createStyle(`:${value}`, sel.pseudoClass);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return this.createStyle(`::${value}`, sel.pseudoElement);
+  },
+
+  combine(selector1, combinator, selector2) {
+    const result = { ...this };
+    result.style = selector1.style
+      .concat(` ${combinator} `)
+      .concat(selector2.style);
+    return result;
+  },
+
+  stringify() {
+    return this.style.join('');
   },
 };
 
